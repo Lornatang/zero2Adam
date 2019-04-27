@@ -60,10 +60,13 @@ def init_parameters(layer_dims):
   -----------------------------------
   dictionary: storage parameters w1,w2...wL, b1,...bL
   """
-  l = len(layer_dims)
+  np.random.seed(10)
+  L = len(layer_dims)
   paras = {}
-  for para in range(1, l):
-    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1] * np.sqrt(2 / layer_dims[l - 1]))
+  for l in range(1, L):
+    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1]) * np.sqrt(
+      2 / layer_dims[l - 1])  # he initialization
+
     paras["b" + str(l)] = np.zeros((layer_dims[l], 1))
   return paras
 
