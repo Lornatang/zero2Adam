@@ -81,7 +81,7 @@ It can be seen from the expression that the updated step size calculation can be
 
 Although Adam algorithm has become the mainstream optimization algorithm at present, the best results in many fields (such as object recognition in computer vision and machine translation in NLP) are still obtained by using SGD of Momentum. The results of Wilson et al. 's paper show that the adaptive learning rate method (including AdaGrad, AdaDelta, RMSProp, Adam, etc.) is generally worse than Momentum algorithm in terms of object recognition, character-level modeling, and grammatical component analysis. 
 
-** Aiming at the problem of Adam and other adaptive learning rate methods, the improvement is mainly in two aspects**
+**Aiming at the problem of Adam and other adaptive learning rate methods, the improvement is mainly in two aspects**
 
 - 1.Decoupling weight attenuation
 
