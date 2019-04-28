@@ -194,9 +194,8 @@ def compute_cost(pred, label):
   ------------------------------------
   loss:  the difference between the true and predicted values
   """
-  m = label.shape[1]
-  loss = 1. / m * np.nansum(np.multiply(-np.log(pred), label) +
-                            np.multiply(-np.log(1 - pred), 1 - label))
+  loss = 1. / label.shape[1] * np.nansum(np.multiply(-np.log(pred), label) +
+                               np.multiply(-np.log(1 - pred), 1 - label))
 
   return np.squeeze(loss)
 
