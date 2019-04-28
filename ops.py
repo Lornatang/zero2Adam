@@ -146,24 +146,28 @@ def forward_propagation(x, parameters):
   y:          the output of the last Layer(y_predict)
   caches:     list, every element is a tuple:(W,b,z,A_pre)
   """
-  l = len(parameters) // 2  # number of layer
-  a = x
-  caches = [(None, None, None, a)]
+  L = len(parameters) // 2  # number of layer
+  A = x
+  caches = [(None, None, None, x)]
   # calculate from 1 to L-1 layer
-  for l in range(1, l):
-    A_pre = a
+  for l in range(1, L):
+    A_pre = A
+
     W = parameters["W" + str(l)]
     b = parameters["b" + str(l)]
     z = np.dot(W, A_pre) + b  # cal z = wx + b
-    activation = relu(z)  # relu activation function
-    caches.append((W, b, z, activation))
+
+    A = relu(z)  # relu activation function
+
+    caches.append((W, b, z, A))
 
   # calculate Lth layer
-  WL = parameters["W" + str(l)]
-  bL = parameters["b" + str(l)]
-  zL = np.dot(WL, a) + bL
-  y = relu(zL)
-  caches.append((WL, bL, zL, y))
+  W = parameters["W" + str(L)]
+  b = parameters["b" + str(L)]
+  z = np.dot(W, A) + b
+
+  y = relu(z)
+  caches.append((W, b, z, y))
 
   return y, caches
 
