@@ -1,3 +1,11 @@
+"""Implement some basic operations of Model.
+"""
+
+####################################################
+# Author:  <Changyu Liu>shiyipaisizuo@gmail.com
+# License: MIT
+####################################################
+
 from ops import *
 
 
@@ -16,8 +24,12 @@ def model(data,
   data:            input data, of shape (input size, number of examples)
   label:           true "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)
   layer_dims:      list containing the input size and each layer size
-  learning_rate:   ...
-  num_iterations:  ...
+  learning_rate:   the learning rate, scalar
+  num_iterations:  number of iterative training
+  beta1:           Exponential decay hyperparameter for the first moment estimates
+  beta2:           Exponential decay hyperparameter for the second moment estimates
+  mini_batch_size: size of the mini-batches, integer
+  epsilon:         hyperparameter preventing division by zero in Adam updates
 
   Returns:
   -----------------------------------
@@ -57,7 +69,7 @@ def predict(data, label, parameters):
   -----------------------------------
   data:            input data, of shape (input size, number of examples)
   label:           true "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)
-  parameter:       ...
+  parameter:       final parameters:(W,b)
 
   Returns
   -----------------------------------
@@ -87,7 +99,25 @@ def dnn(X_train,
         beta2=0.999,
         mini_batch_size=64,
         epsilon=1e-8):
-  """DNN model"""
+  """DNN model
+   Paras
+  -----------------------------------
+  X_train:         train data, of shape (input size, number of examples)
+  y_train:         train "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)
+  X_test:          test data, of shape (input size, number of examples)
+  y_test:          test "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)
+  layer_dims:      list containing the input size and each layer size
+  learning_rate:   the learning rate, scalar
+  num_iterations:  number of iterative training
+  beta1:           exponential decay hyperparameter for the first moment estimates
+  beta2:           exponential decay hyperparameter for the second moment estimates
+  mini_batch_size: size of the mini-batches, integer
+  epsilon:         hyperparameter preventing division by zero in Adam updates
+
+  Returns
+  -----------------------------------
+  accuracy:        the correct value of the prediction
+  """
   parameters = model(X_train,
                      y_train,
                      layer_dims,
@@ -98,4 +128,5 @@ def dnn(X_train,
                      mini_batch_size,
                      epsilon)
   accuracy = predict(X_test, y_test, parameters)
+  
   return accuracy
