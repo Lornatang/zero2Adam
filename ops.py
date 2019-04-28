@@ -216,7 +216,6 @@ def update_parameters_with_adam(parameters, grads, v, s, t, learning_rate=0.01, 
   learning_rate: the learning rate, scalar.
   beta1:         Exponential decay hyperparameter for the first moment estimates
   beta2:         Exponential decay hyperparameter for the second moment estimates
-
   epsilon:       hyperparameter preventing division by zero in Adam updates
 
   Returns
