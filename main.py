@@ -1,3 +1,11 @@
+""" Main func.
+"""
+
+####################################################
+# Author:  <Changyu Liu>shiyipaisizuo@gmail.com
+# License: MIT
+####################################################
+
 from model import dnn
 
 from sklearn.datasets import load_breast_cancer
