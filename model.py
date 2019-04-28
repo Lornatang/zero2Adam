@@ -45,7 +45,7 @@ def model(data,
       t += 1
       parameters = update_parameters_with_adam(parameters, grads, v, s, t, learning_rate, beta1, beta2, epsilon)
 
-      print(f"Loss after iteration {i}: {loss}")
+      print(f"Iter {i} loss {loss:.6f}")
       costs.append(loss)
 
   return parameters
@@ -63,16 +63,16 @@ def predict(data, label, parameters):
   -----------------------------------
   accuracy:        the correct value of the prediction
   """
-  m = label.shape[1]
-  Y_prediction = np.zeros((1, m))
+  pred = np.zeros((1, label.shape[1]))
   prob, caches = forward_propagation(data, parameters)
   for i in range(prob.shape[1]):
     # Convert probabilities A[0,i] to actual predictions p[0,i]
     if prob[0, i] > 0.5:
-      Y_prediction[0, i] = 1
+      pred[0, i] = 1
     else:
-      Y_prediction[0, i] = 0
-  accuracy = 1 - np.mean(np.abs(Y_prediction - label))
+      pred[0, i] = 0
+  accuracy = 1 - np.mean(np.abs(pred - label))
+
   return accuracy
 
 
