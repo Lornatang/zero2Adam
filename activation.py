@@ -1,3 +1,11 @@
+"""Implement some basic operations of Activation function.
+"""
+
+####################################################
+# Author:  <Changyu Liu>shiyipaisizuo@gmail.com
+# License: MIT
+####################################################
+
 import numpy as np
 
 
