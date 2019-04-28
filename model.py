@@ -128,5 +128,5 @@ def dnn(X_train,
                      mini_batch_size,
                      epsilon)
   accuracy = predict(X_test, y_test, parameters)
-  
+
   return accuracy
