@@ -6,8 +6,7 @@
 # License: MIT
 ####################################################
 
-
-import numpy as np
+from activation import *
 
 
 def random_mini_batches(data, label, mini_batch_size, seed=10):
@@ -104,35 +103,8 @@ def initialize_adam(parameters):
   return v, s
 
 
-def relu(x):
-  """ linear activation function
-  Paras
-  -----------------------------------
-  x: output of the linear layer
-
-  Returns
-  -----------------------------------
-  max of nums
-  """
-  return np.maximum(0, x)
-
-
-def relu_backward(x):
-  """ derivation of relu
-  Paras
-  -----------------------------------
-  x: output of the linear layer
-
-  Returns
-  -----------------------------------
-  max of nums
-  """
-
-  return np.int64(x > 0)
-
-
 def forward_propagation(x, parameters):
-  """forward propagation function
+  """ forward propagation function
   Paras
   ------------------------------------
   x:          input dataset, of shape (input size, number of examples)
@@ -166,7 +138,7 @@ def forward_propagation(x, parameters):
   b = parameters["b" + str(L)]
   z = np.dot(W, A) + b
 
-  y = relu(z)
+  y = sigmoid(z)
   caches.append((W, b, z, y))
 
   return y, caches
