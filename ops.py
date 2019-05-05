@@ -61,7 +61,8 @@ def init_paras(layer_dims):
   L = len(layer_dims)
   paras = {}
   for l in range(1, L):
-    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1])
+    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1]) * np.sqrt(
+      2 / layer_dims[l - 1])  # he initialization
     paras["b" + str(l)] = np.zeros((layer_dims[l], 1))
 
   return paras
@@ -116,26 +117,22 @@ def forward_propagation(x, paras):
   """
   L = len(paras) // 2  # number of layer
   A = x
-  caches = []
+  caches = [(None, None, None, x)]
   # calculate from 1 to L-1 layer
   for l in range(1, L):
+    A_pre = A
     W = paras["W" + str(l)]
     b = paras["b" + str(l)]
-
-    # linear forward -> relu forward ->linear forward....
-    z = linear(A, W, b)
-    caches.append((A, W, b, z))
-    A = relu(z)
-
+    z = np.dot(W, A_pre) + b  # 计算z = wx + b
+    A = relu(z)  # relu activation function
+    caches.append((W, b, z, A))
   # calculate Lth layer
-  W = paras["W" + str(L)]
-  b = paras["b" + str(L)]
-
-  z = linear(A, W, b)
-  caches.append((A, W, b, z))
-  y = sigmoid(z)
-
-  return y, caches
+  WL = paras["W" + str(L)]
+  bL = paras["b" + str(L)]
+  zL = np.dot(WL, A) + bL
+  AL = sigmoid(zL)
+  caches.append((WL, bL, zL, AL))
+  return AL, caches
 
 
 def backward_propagation(pred, label, caches):
@@ -152,25 +149,30 @@ def backward_propagation(pred, label, caches):
   """
   m = label.shape[1]
   L = len(caches) - 1
-
+  # print("L:   " + str(L))
   # calculate the Lth layer gradients
-  z = 1. / m * (pred - label)
-
-  _, w, b = linear_backward(z, caches[L])
-  gradients = {"dW" + str(L + 1): w, "db" + str(L + 1): b}
-
+  prev_AL = caches[L - 1][3]
+  dzL = 1. / m * (pred - label)
+  # print(dzL.shape)
+  # print(prev_AL.T.shape)
+  dWL = np.dot(dzL, prev_AL.T)
+  dbL = np.sum(dzL, axis=1, keepdims=True)
+  gradients = {"dW" + str(L): dWL, "db" + str(L): dbL}
   # calculate from L-1 to 1 layer gradients
-  for l in reversed(range(0, L)):  # L-1,L-3,....,1
-    _, _, _, z = caches[l]
-    # ReLu backward -> linear backward
-    # relu backward
-    out = relu_backward(z)
-    # linear backward
-    _, w, b = linear_backward(out, caches[l])
+  for l in reversed(range(1, L)):  # L-1,L-3,....,1
+    post_W = caches[l + 1][0]  # 要用后一层的W
+    dz = dzL  # 用后一层的dz
 
-    gradients["dW" + str(l + 1)] = w
-    gradients["db" + str(l + 1)] = b
+    dal = np.dot(post_W.T, dz)
+    z = caches[l][2]  # 当前层的z
+    dzl = np.multiply(dal, relu_backward(z))
+    prev_A = caches[l - 1][3]  # 前一层的A
+    dWl = np.dot(dzl, prev_A.T)
+    dbl = np.sum(dzl, axis=1, keepdims=True)
 
+    gradients["dW" + str(l)] = dWl
+    gradients["db" + str(l)] = dbl
+    dzL = dzl  # 更新dz
   return gradients
 
 
