@@ -37,21 +37,21 @@ def model(data,
   """
   costs = []
   # initialize parameters
-  parameters = init_parameters(layer_dims)
+  parameters = init_paras(layer_dims)
   v, s = initialize_adam(parameters)
   t = 0  # initializing the counter required for Adam update
   seed = 0
   for i in range(0, num_iterations):
     # Define the random minibatches. We increment the seed to reshuffle differently the dataset after each epoch
     seed = seed + 1
-    minibatches = random_mini_batches(data, label, mini_batch_size, seed)
+    minibatches = random_mini_batches(data, label, mini_batch_size)
     for mini_batch in minibatches:
       # Select a mini_batch
       (mini_batch_X, mini_batch_Y) = mini_batch
       # Forward propagation
       AL, caches = forward_propagation(mini_batch_X, parameters)
       # Compute cost
-      loss = compute_cost(AL, mini_batch_Y)
+      loss = compute_loss(AL, mini_batch_Y)
       # Backward propagation
       grads = backward_propagation(AL, mini_batch_Y, caches)
       t += 1
