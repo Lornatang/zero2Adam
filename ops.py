@@ -19,31 +19,31 @@ def random_mini_batches(data, label, batch_size):
 
   Returns
   -----------------------------------
-  batches:    list of synchronous (mini_batch_X, mini_batch_Y)
+  batches:    list of synchronous (data, mini_batch_Y)
   """
   m = data.shape[1]  # number of training examples
   batches = []
 
   # Step 1: Shuffle (data, label)
   permutation = list(np.random.permutation(m))
-  shuffled_X = data[:, permutation]
-  shuffled_Y = label[:, permutation].reshape((1, m))
+  data = data[:, permutation]
+  label = label[:, permutation].reshape((1, m))
 
   # Step 2: Partition (shuffled_X, shuffled_Y). Minus the end case.
   # number of mini batches of size mini_batch_size in your partitioning
   num_batches = m // batch_size
   for k in range(0, num_batches):
-    mini_batch_X = shuffled_X[:, k * batch_size: (k + 1) * batch_size]
-    mini_batch_Y = shuffled_Y[:, k * batch_size: (k + 1) * batch_size]
-    mini_batch = (mini_batch_X, mini_batch_Y)
-    batches.append(mini_batch)
+    data = data[:, k * batch_size: (k + 1) * batch_size]
+    label = label[:, k * batch_size: (k + 1) * batch_size]
+    batch = (data, label)
+    batches.append(batch)
 
   # Handling the end case (last mini-batch < mini_batch_size)
   if m % batch_size != 0:
-    mini_batch_X = shuffled_X[:, num_batches * batch_size: m]
-    mini_batch_Y = shuffled_Y[:, num_batches * batch_size: m]
-    mini_batch = (mini_batch_X, mini_batch_Y)
-    batches.append(mini_batch)
+    data = data[:, num_batches * batch_size: m]
+    label = label[:, num_batches * batch_size: m]
+    batch = (data, label)
+    batches.append(batch)
 
   return batches
 
