@@ -26,7 +26,7 @@ def model(data,
   label:           true "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)
   layer_dims:      list containing the input size and each layer size
   learning_rate:   the learning rate, scalar
-  num_iterations:  number of iterative training
+  iters:           number of iterative training
   batch_size:      size of the mini-batches, integer
   beta1:           Exponential decay hyperparameter for the first moment estimates
   beta2:           Exponential decay hyperparameter for the second moment estimates
@@ -101,7 +101,7 @@ def dnn(X_train,
         y_test,
         layer_dims,
         learning_rate,
-        num_iterations):
+        iters):
   """DNN model
    Paras
   -----------------------------------
@@ -122,7 +122,7 @@ def dnn(X_train,
                 y_train,
                 layer_dims,
                 learning_rate,
-                num_iterations)
+                iters)
   accuracy = predict(X_test, y_test, paras)
 
   return accuracy
