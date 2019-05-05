@@ -1,4 +1,4 @@
-"""Implement some basic operations of Adam.
+"""Implement some basic operations of SGD.
 """
 
 ####################################################
@@ -61,40 +61,40 @@ def init_paras(layer_dims):
   L = len(layer_dims)
   paras = {}
   for l in range(1, L):
-    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1])
+    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1])
     paras["b" + str(l)] = np.zeros((layer_dims[l], 1))
 
   return paras
 
 
-def initialize_adam(parameters):
+def initialize_adam(paras):
   """ Initializes v and s as two python dictionaries with:
         - keys: "dW1", "db1", ..., "dWL", "dbL"
         - values: numpy arrays of zeros of the same shape as the corresponding gradients/parameters.
   Paras
-  ------------------------------------
-  parameters: python dictionary containing your parameters.
-              parameters["W" + str(l)] = Wl
-              parameters["b" + str(l)] = bl
+  -----------------------------------
+  parameters:   python dictionary containing your parameters.
+                parameters["W" + str(l)] = Wl
+                parameters["b" + str(l)] = bl
 
   Returns
-  ------------------------------------
-  v:          python dictionary that will contain the exponentially weighted average of the gradient.
-              v["dW" + str(l)] = ...
-              v["db" + str(l)] = ...
-  s:          python dictionary that will contain the exponentially weighted average of the squared gradient.
-              s["dW" + str(l)] = ...
-              s["db" + str(l)] = ...
+  -----------------------------------
+  v:            python dictionary that will contain the exponentially weighted average of the gradient.
+                v["dW" + str(l)] = ...
+                v["db" + str(l)] = ...
+  s:            python dictionary that will contain the exponentially weighted average of the squared gradient.
+                s["dW" + str(l)] = ...
+                s["db" + str(l)] = ...
   """
-  L = len(parameters) // 2  # number of layers in the neural networks
+  L = len(paras) // 2  # number of layers in the neural networks
   v = {}
   s = {}
   # Initialize v, s. Input: "parameters". Outputs: "v, s".
   for l in range(L):
-    v["dW" + str(l + 1)] = np.zeros(parameters["W" + str(l + 1)].shape)
-    v["db" + str(l + 1)] = np.zeros(parameters["b" + str(l + 1)].shape)
-    s["dW" + str(l + 1)] = np.zeros(parameters["W" + str(l + 1)].shape)
-    s["db" + str(l + 1)] = np.zeros(parameters["b" + str(l + 1)].shape)
+    v["dW" + str(l + 1)] = np.zeros(paras["W" + str(l + 1)].shape)
+    v["db" + str(l + 1)] = np.zeros(paras["b" + str(l + 1)].shape)
+    s["dW" + str(l + 1)] = np.zeros(paras["W" + str(l + 1)].shape)
+    s["db" + str(l + 1)] = np.zeros(paras["b" + str(l + 1)].shape)
 
   return v, s
 
@@ -115,25 +115,25 @@ def forward_propagation(x, paras):
   caches:     list, every element is a tuple:(W,b,z,A_pre)
   """
   L = len(paras) // 2  # number of layer
-  # A = x
+  A = x
   caches = []
   # calculate from 1 to L-1 layer
   for l in range(1, L):
-    w = paras["W" + str(l)]
+    W = paras["W" + str(l)]
     b = paras["b" + str(l)]
 
     # linear forward -> relu forward ->linear forward....
-    z = linear(x, w, b)
-    x = relu(z)
-    caches.append((x, w, b, z))
+    z = linear(A, W, b)
+    caches.append((A, W, b, z))
+    A = relu(z)
 
   # calculate Lth layer
-  w = paras["W" + str(L)]
+  W = paras["W" + str(L)]
   b = paras["b" + str(L)]
 
-  z = linear(x, w, b)
+  z = linear(A, W, b)
+  caches.append((A, W, b, z))
   y = sigmoid(z)
-  caches.append((x, w, b, z))
 
   return y, caches
 
@@ -175,10 +175,11 @@ def backward_propagation(pred, label, caches):
 
 
 def compute_loss(pred, label):
-  """calculate loss function
+  """ calculate loss function
   Paras
   ------------------------------------
   pred:  pred "label" vector (containing 0 if cat, 1 if non-cat)
+
   label: true "label" vector (containing 0 if cat, 1 if non-cat)
 
   Returns
@@ -209,7 +210,7 @@ def update_parameters_with_adam(paras, grads, v, s, t, learning_rate=0.01, beta1
 
   Returns
   ------------------------------------
-  paras:          python dictionary containing your updated parameters
+  parameters:     python dictionary containing your updated parameters
   """
 
   L = len(paras) // 2  # number of layers in the neural networks
@@ -235,3 +236,4 @@ def update_parameters_with_adam(paras, grads, v, s, t, learning_rate=0.01, beta1
     paras["b" + str(l + 1)] = paras["b" + str(l + 1)] - learning_rate * v_corrected["db" + str(l + 1)] / np.sqrt(s_corrected["db" + str(l + 1)] + epsilon)
 
   return paras
+
