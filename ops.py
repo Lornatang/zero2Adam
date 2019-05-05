@@ -67,6 +67,38 @@ def init_paras(layer_dims):
   return paras
 
 
+def initialize_adam(parameters):
+  """ Initializes v and s as two python dictionaries with:
+        - keys: "dW1", "db1", ..., "dWL", "dbL"
+        - values: numpy arrays of zeros of the same shape as the corresponding gradients/parameters.
+  Paras
+  ------------------------------------
+  parameters: python dictionary containing your parameters.
+              parameters["W" + str(l)] = Wl
+              parameters["b" + str(l)] = bl
+
+  Returns
+  ------------------------------------
+  v:          python dictionary that will contain the exponentially weighted average of the gradient.
+              v["dW" + str(l)] = ...
+              v["db" + str(l)] = ...
+  s:          python dictionary that will contain the exponentially weighted average of the squared gradient.
+              s["dW" + str(l)] = ...
+              s["db" + str(l)] = ...
+  """
+  L = len(parameters) // 2  # number of layers in the neural networks
+  v = {}
+  s = {}
+  # Initialize v, s. Input: "parameters". Outputs: "v, s".
+  for l in range(L):
+    v["dW" + str(l + 1)] = np.zeros(parameters["W" + str(l + 1)].shape)
+    v["db" + str(l + 1)] = np.zeros(parameters["b" + str(l + 1)].shape)
+    s["dW" + str(l + 1)] = np.zeros(parameters["W" + str(l + 1)].shape)
+    s["db" + str(l + 1)] = np.zeros(parameters["b" + str(l + 1)].shape)
+
+  return v, s
+
+
 def forward_propagation(x, paras):
   """ forward propagation function
   Paras
@@ -92,16 +124,16 @@ def forward_propagation(x, paras):
 
     # linear forward -> relu forward ->linear forward....
     z = linear(x, w, b)
-    caches.append((x, w, b, z))
     x = relu(z)
+    caches.append((x, w, b, z))
 
   # calculate Lth layer
   w = paras["W" + str(L)]
   b = paras["b" + str(L)]
 
   z = linear(x, w, b)
-  caches.append((x, w, b, z))
   y = sigmoid(z)
+  caches.append((x, w, b, z))
 
   return y, caches
 
@@ -147,7 +179,6 @@ def compute_loss(pred, label):
   Paras
   ------------------------------------
   pred:  pred "label" vector (containing 0 if cat, 1 if non-cat)
-
   label: true "label" vector (containing 0 if cat, 1 if non-cat)
 
   Returns
@@ -159,32 +190,48 @@ def compute_loss(pred, label):
   return np.squeeze(loss)
 
 
-def update_parameters_with_sgd(paras, grads, learning_rate):
-  """ update parameters using SGD
-  ```
-	VdW = beta * VdW - learning_rate * dW
-	Vdb = beta * Vdb - learning_rate * db
-	W = W + beta * VdW - learning_rate * dW
-	b = b + beta * Vdb - learning_rate * db
-	```
+def update_parameters_with_adam(paras, grads, v, s, t, learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1e-8):
+  """ Update parameters using Adam
   Paras
   ------------------------------------
-  parameters:    python dictionary containing your parameters:
-                 parameters['W' + str(l)] = Wl
-                 parameters['b' + str(l)] = bl
-  grads:         python dictionary containing your gradients for each parameters:
-                 grads['dW' + str(l)] = dWl
-                 grads['db' + str(l)] = dbl
-  learning_rate: the learning rate, scalar.
+  parameters:     python dictionary containing your parameters:
+                  parameters['W' + str(l)] = Wl
+                  parameters['b' + str(l)] = bl
+  grads:          python dictionary containing your gradients for each parameters:
+                  grads['dW' + str(l)] = dWl
+                  grads['db' + str(l)] = dbl
+  v:              Adam variable, moving average of the first gradient, python dictionary
+  s:              Adam variable, moving average of the squared gradient, python dictionary
+  learning_rate:  the learning rate, scalar.
+  beta1:          Exponential decay hyperparameter for the first moment estimates
+  beta2:          Exponential decay hyperparameter for the second moment estimates
+  epsilon:        hyperparameter preventing division by zero in Adam updates
 
   Returns
   ------------------------------------
-  parameters:     python dictionary containing your updated parameters
-
+  paras:          python dictionary containing your updated parameters
   """
-  L = len(paras) // 2
+
+  L = len(paras) // 2  # number of layers in the neural networks
+  v_corrected = {}  # Initializing first moment estimate, python dictionary
+  s_corrected = {}  # Initializing second moment estimate, python dictionary
+
+  # Perform Adam update on all parameters
   for l in range(L):
-    paras["W" + str(l + 1)] = paras["W" + str(l + 1)] - learning_rate * grads["dW" + str(l + 1)]
-    paras["b" + str(l + 1)] = paras["b" + str(l + 1)] - learning_rate * grads["db" + str(l + 1)]
+    # Moving average of the gradients. Inputs: "v, grads, beta1". Output: "v".
+    v["dW" + str(l + 1)] = beta1 * v["dW" + str(l + 1)] + (1 - beta1) * grads['dW' + str(l + 1)]
+    v["db" + str(l + 1)] = beta1 * v["db" + str(l + 1)] + (1 - beta1) * grads['db' + str(l + 1)]
+    # Compute bias-corrected first moment estimate. Inputs: "v, beta1, t". Output: "v_corrected".
+    v_corrected["dW" + str(l + 1)] = v["dW" + str(l + 1)] / (1 - np.power(beta1, t))
+    v_corrected["db" + str(l + 1)] = v["db" + str(l + 1)] / (1 - np.power(beta1, t))
+    # Moving average of the squared gradients. Inputs: "s, grads, beta2". Output: "s".
+    s["dW" + str(l + 1)] = beta2 * s["dW" + str(l + 1)] + (1 - beta2) * np.power(grads['dW' + str(l + 1)], 2)
+    s["db" + str(l + 1)] = beta2 * s["db" + str(l + 1)] + (1 - beta2) * np.power(grads['db' + str(l + 1)], 2)
+    # Compute bias-corrected second raw moment estimate. Inputs: "s, beta2, t". Output: "s_corrected".
+    s_corrected["dW" + str(l + 1)] = s["dW" + str(l + 1)] / (1 - np.power(beta2, t))
+    s_corrected["db" + str(l + 1)] = s["db" + str(l + 1)] / (1 - np.power(beta2, t))
+    # Update parameters. Inputs: "parameters, learning_rate, v_corrected, s_corrected, epsilon". Output: "parameters".
+    paras["W" + str(l + 1)] = paras["W" + str(l + 1)] - learning_rate * v_corrected["dW" + str(l + 1)] / np.sqrt(s_corrected["dW" + str(l + 1)] + epsilon)
+    paras["b" + str(l + 1)] = paras["b" + str(l + 1)] - learning_rate * v_corrected["db" + str(l + 1)] / np.sqrt(s_corrected["db" + str(l + 1)] + epsilon)
 
   return paras
