@@ -238,4 +238,3 @@ def update_parameters_with_adam(paras, grads, v, s, t, learning_rate=0.01, beta1
     paras["b" + str(l + 1)] = paras["b" + str(l + 1)] - learning_rate * v_corrected["db" + str(l + 1)] / np.sqrt(s_corrected["db" + str(l + 1)] + epsilon)
 
   return paras
-
