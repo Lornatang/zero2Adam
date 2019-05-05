@@ -38,11 +38,11 @@ def linear_backward(x, cache):
   cal wx + b
   """
   A, W, b, z = cache
-  dw = np.dot(x, A.T)
+  dW = np.dot(x, A.T)
   db = np.sum(x, axis=1, keepdims=True)
   dx = np.dot(W.T, x)
 
-  return dx, dw, db
+  return dx, dW, db
 
 
 def relu(x):
