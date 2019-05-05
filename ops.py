@@ -61,8 +61,7 @@ def init_paras(layer_dims):
   L = len(layer_dims)
   paras = {}
   for l in range(1, L):
-    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1]) * np.sqrt(
-      2 / layer_dims[l - 1])  # he initialization
+    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1])
     paras["b" + str(l)] = np.zeros((layer_dims[l], 1))
 
   return paras
@@ -188,8 +187,10 @@ def compute_loss(pred, label):
   ------------------------------------
   loss:  the difference between the true and predicted values
   """
-  loss = 1. / label.shape[1] * np.nansum(np.multiply(-np.log(pred), label) + np.multiply(-np.log(1 - pred), 1 - label))
-
+  try:
+    loss = 1. / label.shape[1] * np.nansum(np.multiply(-np.log(pred), label) + np.multiply(-np.log(1 - pred), 1 - label))
+  finally:
+    pass
   return np.squeeze(loss)
 
 
