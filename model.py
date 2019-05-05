@@ -33,12 +33,12 @@ def model(data,
 
   Returns:
   -----------------------------------
-  parameters：      final parameters:(W,b)
+  paras：      final paras:(W,b)
   """
   costs = []
-  # initialize parameters
-  parameters = init_paras(layer_dims)
-  v, s = initialize_adam(parameters)
+  # initialize paras
+  paras = init_paras(layer_dims)
+  v, s = initialize_adam(paras)
   t = 0  # initializing the counter required for Adam update
   seed = 0
   for i in range(0, num_iterations):
@@ -49,21 +49,21 @@ def model(data,
       # Select a mini_batch
       (mini_batch_X, mini_batch_Y) = mini_batch
       # Forward propagation
-      AL, caches = forward_propagation(mini_batch_X, parameters)
+      AL, caches = forward_propagation(mini_batch_X, paras)
       # Compute cost
       loss = compute_loss(AL, mini_batch_Y)
       # Backward propagation
       grads = backward_propagation(AL, mini_batch_Y, caches)
       t += 1
-      parameters = update_parameters_with_adam(parameters, grads, v, s, t, learning_rate, beta1, beta2, epsilon)
+      paras = update_parameters_with_adam(paras, grads, v, s, t, learning_rate, beta1, beta2, epsilon)
 
       print(f"Iter {i} loss {loss:.6f}")
       costs.append(loss)
 
-  return parameters
+  return paras
 
 
-def predict(data, label, parameters):
+def predict(data, label, paras):
   """predict function
   Paras
   -----------------------------------
@@ -76,7 +76,7 @@ def predict(data, label, parameters):
   accuracy:        the correct value of the prediction
   """
   pred = np.zeros((1, label.shape[1]))
-  prob, caches = forward_propagation(data, parameters)
+  prob, caches = forward_propagation(data, paras)
   for i in range(prob.shape[1]):
     # Convert probabilities A[0,i] to actual predictions p[0,i]
     if prob[0, i] > 0.5:
@@ -118,15 +118,15 @@ def dnn(X_train,
   -----------------------------------
   accuracy:        the correct value of the prediction
   """
-  parameters = model(X_train,
-                     y_train,
-                     layer_dims,
-                     learning_rate,
-                     num_iterations,
-                     beta1,
-                     beta2,
-                     mini_batch_size,
-                     epsilon)
-  accuracy = predict(X_test, y_test, parameters)
+  paras = model(X_train,
+                y_train,
+                layer_dims,
+                learning_rate,
+                num_iterations,
+                beta1,
+                beta2,
+                mini_batch_size,
+                epsilon)
+  accuracy = predict(X_test, y_test, paras)
 
   return accuracy
