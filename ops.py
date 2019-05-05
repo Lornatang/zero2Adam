@@ -61,7 +61,7 @@ def init_paras(layer_dims):
   L = len(layer_dims)
   paras = {}
   for l in range(1, L):
-    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1])
+    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1])
     paras["b" + str(l)] = np.zeros((layer_dims[l], 1))
 
   return paras
