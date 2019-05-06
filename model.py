@@ -14,11 +14,7 @@ def model(data,
           label,
           layer_dims,
           lr,
-          iters,
-          batch_size=64,
-          beta=0.9,
-          beta2=0.999,
-          epsilon=1e-8):
+          iters):
   """ define basic model
   Paras
   -----------------------------------
@@ -26,11 +22,8 @@ def model(data,
   label:           true "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)
   layer_dims:      list containing the input size and each layer size
   learning_rate:   the learning rate, scalar
-  iters:           number of iterative training
-  batch_size:      size of the mini-batches, integer
-  beta1:           Exponential decay hyperparameter for the first moment estimates
-  beta2:           Exponential decay hyperparameter for the second moment estimates
-  epsilon:         hyperparameter preventing division by zero in Adam updates
+  num_iterations:  number of iterative training
+  mini_batch_size: size of the mini-batches, integer
 
   Returns:
   -----------------------------------
@@ -39,38 +32,35 @@ def model(data,
   global loss
   losses = []
   # initialize paras
-  paras = init_paras(layer_dims)
+  paras, bn_paras = init_paras(layer_dims)
   v, s = initialize_adam(paras)
   t = 0
-  for i in range(0, iters):
-    # Define the random mini batches. We increment the seed to reshuffle differently the dataset after each epoch
-    batches = random_mini_batches(data, label, batch_size)
-    for batch in batches:
-      # Select a batch
-      (data, label) = batch
-      # Forward propagation
-      pred, caches = forward_propagation(data, paras)
-      # Compute cost
-      loss = compute_loss(pred, label)
-      # Backward propagation
-      grads = backward_propagation(pred, label, caches)
-      # update parameters
-      t += 1
-      paras = update_parameters_with_adam(paras, grads, v, s, t, lr, beta, beta2, epsilon)
+  for i in range(1, iters+1):
+    # Forward propagation
+    pred, caches, bn_paras = forward_propagation(data, paras, bn_paras)
+    # Compute cost
+    loss = compute_loss(pred, label)
 
-    if i % 200 == 0:
+    # Backward propagation
+    grads = backward_propagation(pred, label, caches)
+    # update parameters
+    t += 1
+    paras = update_parameters_with_adam(paras, grads, v, s, t, lr)
+
+    if i % 1000 == 0:
       print(f"Iter {i} loss {loss:.6f}")
       losses.append(loss)
+
   plt.clf()
-  plt.plot(losses)  # o-:圆形
-  plt.xlabel("iterations(thousand)")  # 横坐标名字
-  plt.ylabel("loss")  # 纵坐标名字
+  plt.plot(losses)
+  plt.xlabel("iterations(thousand)")
+  plt.ylabel("loss")
   plt.show()
 
-  return paras
+  return paras, bn_paras
 
 
-def predict(data, label, paras):
+def predict(data, label, paras, bn_paras):
   """predict function
   Paras
   -----------------------------------
@@ -82,8 +72,9 @@ def predict(data, label, paras):
   -----------------------------------
   accuracy:        the correct value of the prediction
   """
-  pred = np.zeros((1, label.shape[1]))
-  prob, _ = forward_propagation(data, paras)
+  batch_size = label.shape[1]
+  pred = np.zeros((1, batch_size))
+  prob, _, _ = forward_propagation(data, paras, bn_paras)
   for i in range(prob.shape[1]):
     # Convert probabilities A[0,i] to actual predictions p[0,i]
     if prob[0, i] > 0.5:
@@ -100,9 +91,9 @@ def dnn(X_train,
         X_test,
         y_test,
         layer_dims,
-        learning_rate,
+        lr,
         iters):
-  """DNN model
+  """ DNN model
    Paras
   -----------------------------------
   X_train:         train data, of shape (input size, number of examples)
@@ -118,11 +109,12 @@ def dnn(X_train,
   -----------------------------------
   accuracy:        the correct value of the prediction
   """
-  paras = model(X_train,
-                y_train,
-                layer_dims,
-                learning_rate,
-                iters)
-  accuracy = predict(X_test, y_test, paras)
+  paras, bn_paras = model(X_train,
+                          y_train,
+                          layer_dims,
+                          lr,
+                          iters)
+
+  accuracy = predict(X_test, y_test, paras, bn_paras)
 
   return accuracy

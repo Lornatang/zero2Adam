@@ -60,11 +60,16 @@ def init_paras(layer_dims):
   """
   L = len(layer_dims)
   paras = {}
+  bn_paras = {}
   for l in range(1, L):
-    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1])
+    paras["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1]) * 0.1
     paras["b" + str(l)] = np.zeros((layer_dims[l], 1))
+    paras["gamma" + str(l)] = np.ones((layer_dims[l], 1))
+    paras["beta" + str(l)] = np.zeros((layer_dims[l], 1))
+    bn_paras["moving_mean" + str(l)] = np.zeros((layer_dims[l], 1))
+    bn_paras["moving_var" + str(l)] = np.zeros((layer_dims[l], 1))
 
-  return paras
+  return paras, bn_paras
 
 
 def initialize_adam(paras):
@@ -86,7 +91,7 @@ def initialize_adam(paras):
                 s["dW" + str(l)] = ...
                 s["db" + str(l)] = ...
   """
-  L = len(paras) // 2  # number of layers in the neural networks
+  L = len(paras) // 4  # number of layers in the neural networks
   v = {}
   s = {}
   # Initialize v, s. Input: "parameters". Outputs: "v, s".
@@ -99,39 +104,51 @@ def initialize_adam(paras):
   return v, s
 
 
-def forward_propagation(x, paras):
+def forward_propagation(x, paras, bn_paras, decay=0.9):
   """ forward propagation function
   Paras
   ------------------------------------
-  x:          input dataset, of shape (input size, number of examples)
+  x:           input dataset, of shape (input size, number of examples)
 
-  parameters: python dictionary containing your parameters "W1", "b1", "W2", "b2",...,"WL", "bL"
-              W -- weight matrix of shape (size of current layer, size of previous layer)
-              b -- bias vector of shape (size of current layer,1)
+  W:           weight matrix of shape (size of current layer, size of previous layer)
+  b:           bias vector of shape (size of current layer,1)
+  gamma:       scale vector of shape (size of current layer ,1)
+  beta:        offset vector of shape (size of current layer ,1)
+  decay:       the parameter of exponential weight average
+  moving_mean: decay * moving_mean + (1 - decay) * current_mean
+  moving_var:  decay * moving_var + (1 - decay) * moving_var
 
   Returns
   ------------------------------------
   y:          the output of the last Layer(y_predict)
   caches:     list, every element is a tuple:(W,b,z,A_pre)
   """
-  L = len(paras) // 2  # number of layer
-  A = x
-  caches = [(None, None, None, x)]
+  L = len(paras) // 4  # number of layer
+  caches = []
   # calculate from 1 to L-1 layer
   for l in range(1, L):
-    A_pre = A
     W = paras["W" + str(l)]
     b = paras["b" + str(l)]
-    z = np.dot(W, A_pre) + b  # 计算z = wx + b
-    A = relu(z)  # relu activation function
-    caches.append((W, b, z, A))
-  # calculate Lth layer
-  WL = paras["W" + str(L)]
-  bL = paras["b" + str(L)]
-  zL = np.dot(WL, A) + bL
-  AL = sigmoid(zL)
-  caches.append((WL, bL, zL, AL))
-  return AL, caches
+    gamma = paras["gamma" + str(l)]
+    beta = paras["beta" + str(l)]
+
+    # linear forward -> relu forward ->linear forward....
+    z = linear(x, W, b)
+    mean, var, sqrt_var, normalized, out = batch_norm(z, gamma, beta)
+    caches.append((x, W, b, gamma, sqrt_var, normalized, out))
+    x = relu(out)
+    bn_paras["moving_mean" + str(l)] = decay * bn_paras["moving_mean" + str(l)] + (1 - decay) * mean
+    bn_paras["moving_var" + str(l)] = decay * bn_paras["moving_var" + str(l)] + (1 - decay) * var
+
+    # calculate Lth layer
+  W = paras["W" + str(L)]
+  b = paras["b" + str(L)]
+
+  z = linear(x, W, b)
+  caches.append((x, W, b, None, None, None, None))
+  y = sigmoid(z)
+
+  return y, caches, bn_paras
 
 
 def backward_propagation(pred, label, caches):
@@ -146,33 +163,31 @@ def backward_propagation(pred, label, caches):
   ------------------------------------
   gradients -- A dictionary with the gradients with respect to dW,db
   """
-  m = label.shape[1]
+  batch_size = pred.shape[1]
   L = len(caches) - 1
-  # print("L:   " + str(L))
+
   # calculate the Lth layer gradients
-  prev_AL = caches[L - 1][3]
-  dzL = 1. / m * (pred - label)
-  # print(dzL.shape)
-  # print(prev_AL.T.shape)
-  dWL = np.dot(dzL, prev_AL.T)
-  dbL = np.sum(dzL, axis=1, keepdims=True)
-  gradients = {"dW" + str(L): dWL, "db" + str(L): dbL}
+  z = 1. / batch_size * (pred - label)
+  x, W, b = linear_backward(z, caches[L])
+  grads = {"dW" + str(L + 1): W, "db" + str(L + 1): b}
+
   # calculate from L-1 to 1 layer gradients
-  for l in reversed(range(1, L)):  # L-1,L-3,....,1
-    post_W = caches[l + 1][0]  # 要用后一层的W
-    dz = dzL  # 用后一层的dz
+  for l in reversed(range(0, L)):  # L-1,L-3,....,0
+    # relu_backward->batch_norm_backward->linear backward
+    _, W, b, gamma, sqrt_var, normalized, out = caches[l]
+    # relu backward
+    out = relu_backward(x, out)
+    # batch normalization
+    dgamma, dbeta, dx = batch_norm_backward(out, caches[l])
+    # linear backward
+    x, dW, db = linear_backward(dx, caches[l])
 
-    dal = np.dot(post_W.T, dz)
-    z = caches[l][2]  # 当前层的z
-    dzl = np.multiply(dal, relu_backward(z))
-    prev_A = caches[l - 1][3]  # 前一层的A
-    dWl = np.dot(dzl, prev_A.T)
-    dbl = np.sum(dzl, axis=1, keepdims=True)
+    grads["dW" + str(l + 1)] = dW
+    grads["db" + str(l + 1)] = db
+    grads["dgamma" + str(l + 1)] = dgamma
+    grads["dbeta" + str(l + 1)] = dbeta
 
-    gradients["dW" + str(l)] = dWl
-    gradients["db" + str(l)] = dbl
-    dzL = dzl  # 更新dz
-  return gradients
+  return grads
 
 
 def compute_loss(pred, label):
@@ -187,10 +202,11 @@ def compute_loss(pred, label):
   ------------------------------------
   loss:  the difference between the true and predicted values
   """
-  try:
-    loss = 1. / label.shape[1] * np.nansum(np.multiply(-np.log(pred), label) + np.multiply(-np.log(1 - pred), 1 - label))
-  finally:
-    pass
+
+  batch_size = label.shape[1]
+  loss = 1. / batch_size * np.nansum(np.multiply(-np.log(pred), label) +
+                                     np.multiply(-np.log(1 - pred), 1 - label))
+
   return np.squeeze(loss)
 
 
@@ -216,7 +232,7 @@ def update_parameters_with_adam(paras, grads, v, s, t, learning_rate=0.01, beta1
   parameters:     python dictionary containing your updated parameters
   """
 
-  L = len(paras) // 2  # number of layers in the neural networks
+  L = len(paras) // 4  # number of layers in the neural networks
   v_corrected = {}  # Initializing first moment estimate, python dictionary
   s_corrected = {}  # Initializing second moment estimate, python dictionary
 
@@ -237,5 +253,8 @@ def update_parameters_with_adam(paras, grads, v, s, t, learning_rate=0.01, beta1
     # Update parameters. Inputs: "parameters, learning_rate, v_corrected, s_corrected, epsilon". Output: "parameters".
     paras["W" + str(l + 1)] = paras["W" + str(l + 1)] - learning_rate * v_corrected["dW" + str(l + 1)] / np.sqrt(s_corrected["dW" + str(l + 1)] + epsilon)
     paras["b" + str(l + 1)] = paras["b" + str(l + 1)] - learning_rate * v_corrected["db" + str(l + 1)] / np.sqrt(s_corrected["db" + str(l + 1)] + epsilon)
+    if l < L - 1:
+      paras["gamma" + str(l + 1)] = paras["gamma" + str(l + 1)] - learning_rate * grads["dgamma" + str(l + 1)]
+      paras["beta" + str(l + 1)] = paras["beta" + str(l + 1)] - learning_rate * grads["dbeta" + str(l + 1)]
 
   return paras
