@@ -168,5 +168,5 @@ def batch_norm_backward(dx, cache):
   dgamma = np.sum(dx * normalized, axis=1, keepdims=True)
   dbeta = np.sum(dx, axis=1, keepdims=True)
   dout = 1. / m * gamma * sqrt_var * (
-          m * dx - np.sum(dx, axis=1, keepdims=True) - normalized * np.sum(dx * normalized, axis=1, keepdims=True))
+              m * dx - np.sum(dx, axis=1, keepdims=True) - normalized * np.sum(dx * normalized, axis=1, keepdims=True))
   return dgamma, dbeta, dout
