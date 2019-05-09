@@ -1,4 +1,4 @@
-# Adam
+# Optim of Adam
 
 In December 2014, two scholars, Kingma and Lei Ba, put forward the Adam optimizer combining the advantages of the two optimization algorithms, AdaGrad and RMSProp. 
 The First Moment Estimation of the gradient and the SecondMoment Estimation are taken into comprehensive consideration to calculate the update step size. 
