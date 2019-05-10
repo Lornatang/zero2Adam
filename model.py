@@ -51,12 +51,6 @@ def model(data,
       print(f"Iter {i} loss {loss:.6f}")
       losses.append(loss)
 
-  plt.clf()
-  plt.plot(losses)
-  plt.xlabel("iterations(thousand)")
-  plt.ylabel("loss")
-  plt.show()
-
   return paras, bn_paras
 
 
