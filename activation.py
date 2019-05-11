@@ -53,7 +53,6 @@ def relu(x):
 
   Returns
   -----------------------------------
-  max of nums
   """
 
   return np.maximum(0, x)
@@ -67,7 +66,6 @@ def relu_backward(dx, x):
 
   Returns
   -----------------------------------
-  max of nums
   """
 
   return np.multiply(dx, np.int64(x > 0))
@@ -81,7 +79,7 @@ def sigmoid(x):
 
   Returns
   -----------------------------------
-  max of nums"""
+  """
 
   return 1 / (1 + np.exp(-x))
 
