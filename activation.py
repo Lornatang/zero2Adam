@@ -52,6 +52,7 @@ def relu(x):
   x: output of the linear layer
 
   Returns
+  maximum(0, x)
   -----------------------------------
   """
 
